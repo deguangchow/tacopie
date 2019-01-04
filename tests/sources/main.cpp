@@ -21,10 +21,33 @@
 // SOFTWARE.
 
 #include <gtest/gtest.h>
+#include <tacopie/tacopie>
+
+#ifdef _WIN32
+#include <Winsock2.h>
+#endif /* _WIN32 */
 
 int
 main(int argc, char** argv) {
+
+#ifdef _WIN32
+    //! Windows netword DLL init
+    WORD version = MAKEWORD(2, 2);
+    WSADATA data;
+
+    if (WSAStartup(version, &data) != 0) {
+        std::cerr << "WSAStartup() failure" << std::endl;
+        return -1;
+    }
+#endif /* _WIN32 */
+
   ::testing::InitGoogleTest(&argc, argv);
 
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+
+#ifdef _WIN32
+  WSACleanup();
+#endif /* _WIN32 */
+
+  return ret;
 }
