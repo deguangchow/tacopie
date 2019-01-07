@@ -24,7 +24,6 @@ on_new_message(tacopie::tcp_client& client, const tacopie::tcp_client::read_resu
     }
 }
 
-#if 0
 TEST(TacopieClient, ValidConnectionDefinedHost) {
     tacopie::tcp_client client;
     EXPECT_FALSE(client.is_connected());
@@ -83,8 +82,6 @@ TEST(TacopieClient, Operator) {
     EXPECT_TRUE(client1 != client2);
 }
 
-#endif
-
 TEST(TacopieClient, AsyncWriteRead) {
     tacopie::tcp_client client;
     client.connect("127.0.0.1", 3001);
@@ -99,4 +96,12 @@ TEST(TacopieClient, AsyncWriteRead) {
     EXPECT_NO_THROW(client.async_write(wr_req));
     EXPECT_NO_THROW(client.async_read({ 1024, std::bind(&on_new_message, std::ref(client), std::placeholders::_1) }));
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+TEST(TacopieClient, GetSocket) {
+    tacopie::tcp_client client;
+    client.connect("127.0.0.1", 3001);
+
+    EXPECT_NO_THROW(client.get_socket());
+    EXPECT_NO_THROW(EXPECT_FALSE(nullptr == client.get_io_service()));
 }
