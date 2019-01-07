@@ -42,6 +42,7 @@ void
 on_new_message(const std::shared_ptr<tacopie::tcp_client>& client, const tacopie::tcp_client::read_result& res) {
   if (res.success) {
     std::cout << "Client recv data" << std::endl;
+      std::cout << "Client recv data" << std::endl;
     client->async_write({res.buffer, nullptr});
     client->async_read({1024, std::bind(&on_new_message, client, std::placeholders::_1)});
   }
@@ -63,6 +64,10 @@ main(void) {
     return -1;
   }
 #endif /* _WIN32 */
+
+#if 0
+  tacopie::active_logger = std::unique_ptr<tacopie::logger>(new tacopie::logger(tacopie::logger::log_level::debug));
+#endif
 
   tacopie::tcp_server s;
   s.start("127.0.0.1", 3001, [](const std::shared_ptr<tacopie::tcp_client>& client) -> bool {

@@ -41,6 +41,9 @@ main(int argc, char** argv) {
     }
 #endif /* _WIN32 */
 
+#if 0
+    tacopie::active_logger = std::unique_ptr<tacopie::logger>(new tacopie::logger(tacopie::logger::log_level::debug));
+#endif
   ::testing::InitGoogleTest(&argc, argv);
 
   int ret = RUN_ALL_TESTS();
