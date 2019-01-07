@@ -41,8 +41,8 @@ signint_handler(int) {
 void
 on_new_message(const std::shared_ptr<tacopie::tcp_client>& client, const tacopie::tcp_client::read_result& res) {
   if (res.success) {
-    std::cout << "Client recv data" << std::endl;
-      std::cout << "Client recv data" << std::endl;
+      std::string buf(res.buffer.begin(), res.buffer.end());
+      std::cout << "Client recv data: " << buf << std::endl;
     client->async_write({res.buffer, nullptr});
     client->async_read({1024, std::bind(&on_new_message, client, std::placeholders::_1)});
   }
