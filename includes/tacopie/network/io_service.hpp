@@ -90,7 +90,8 @@ public:
   //! \param rd_callback callback to be executed on read event
   //! \param wr_callback callback to be executed on write event
   //!
-  void track(const tcp_socket& socket, const event_callback_t& rd_callback = nullptr, const event_callback_t& wr_callback = nullptr);
+  void track(const tcp_socket& socket, const event_callback_t& rd_callback = nullptr,
+      const event_callback_t& wr_callback = nullptr);
 
   //!
   //! update the read callback
@@ -138,25 +139,26 @@ private:
   //!  * is_executing_rd_callback: whether the rd callback is currently being executed or not
   //!  * wr_callback: callback to be executed on write availability
   //!  * is_executing_wr_callback: whether the wr callback is currently being executed or not
-  //!  * marked_for_untrack: whether the socket is marked for being untrack (that is, will be untracked whenever all the callback completed their execution)
+  //!  * marked_for_untrack: whether the socket is marked for being untrack
+  //! (that is, will be untracked whenever all the callback completed their execution)
   //!
   //!
   struct tracked_socket {
     //! ctor
     tracked_socket(void)
-    : rd_callback(nullptr)
-    , wr_callback(nullptr) {}
+    : callbackRead(nullptr)
+    , callbackWrite(nullptr) {}
 
     //! rd event
-    event_callback_t rd_callback;
-    std::atomic<bool> is_executing_rd_callback = ATOMIC_VAR_INIT(false);
+    event_callback_t    callbackRead;
+    std::atomic<bool>   bIsExecutingCallbackRead_a  = ATOMIC_VAR_INIT(false);
 
     //! wr event
-    event_callback_t wr_callback;
-    std::atomic<bool> is_executing_wr_callback = ATOMIC_VAR_INIT(false);
+    event_callback_t    callbackWrite;
+    std::atomic<bool>   bIsExecutingCallbackWrite_a = ATOMIC_VAR_INIT(false);
 
     //! marked for untrack
-    std::atomic<bool> marked_for_untrack = ATOMIC_VAR_INIT(false);
+    std::atomic<bool>   bMarkedForUntrack_a         = ATOMIC_VAR_INIT(false);
   };
 
 private:
@@ -200,52 +202,52 @@ private:
   //!
   //! tracked sockets
   //!
-  std::unordered_map<fd_t, tracked_socket> m_tracked_sockets;
+  std::unordered_map<fd_t, tracked_socket>      m_mapTrackedSockets;
 
   //!
   //! whether the worker should stop or not
   //!
-  std::atomic<bool> m_should_stop;
+  std::atomic<bool>                             m_bShouldStop_a;
 
   //!
   //! poll thread
   //!
-  std::thread m_poll_worker;
+  std::thread                                   m_threadPollWorker;
 
   //!
   //! callback workers
   //!
-  utils::thread_pool m_callback_workers;
+  utils::thread_pool                            m_threadPoolCallbackWorkers;
 
   //!
   //! thread safety
   //!
-  std::mutex m_tracked_sockets_mtx;
+  std::mutex                                    m_mtxTrackedSockets;
 
   //!
   //! data structure given to select (list of fds to poll)
   //!
-  std::vector<fd_t> m_polled_fds;
+  std::vector<fd_t>                             m_vctPolledFds;
 
   //!
   //! data structure given to select (list of fds to poll for read)
   //!
-  fd_set m_rd_set;
+  fd_set                                        m_fdsetRead;
 
   //!
   //! data structure given to select (list of fds to poll for write)
   //!
-  fd_set m_wr_set;
+  fd_set                                        m_fdsetWrite;
 
   //!
   //! condition variable to wait on removal
   //!
-  std::condition_variable m_wait_for_removal_condvar;
+  std::condition_variable                       m_cvWaitForRemoval;
 
   //!
   //! fd associated to the pipe used to wake up the poll call
   //!
-  tacopie::self_pipe m_notifier;
+  tacopie::self_pipe                            m_selfPipeNotifier;
 };
 
 //!

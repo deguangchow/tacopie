@@ -40,7 +40,8 @@ namespace tacopie {
 
 //!
 //! tacopie::tcp_server is the class providing TCP Server features.
-//! The tcp_server works entirely asynchronously, waiting for the io_service to notify whenever a new client wished to connect.
+//! The tcp_server works entirely asynchronously, waiting for the io_service to notify whenever a new client wished to
+//! connect.
 //!
 class tcp_server {
 public:
@@ -74,7 +75,9 @@ public:
   //! callback called whenever a new client is connecting to the server
   //!
   //! Takes as parameter a shared pointer to the tcp_client that wishes to connect
-  //! Returning true means connection is handled by tcp_client wrapper and nothing will be done by tcp_server. Returning false means connection is handled by tcp_server, will be stored in an internal list and tcp_client disconection_handler overriden.
+  //! Returning true means connection is handled by tcp_client wrapper and nothing will be done by tcp_server.
+  //! Returning false means connection is handled by tcp_server, will be stored in an internal list and tcp_client
+  //! disconection_handler overriden.
   //!
   typedef std::function<bool(const std::shared_ptr<tcp_client>&)> on_new_connection_callback_t;
 
@@ -83,17 +86,21 @@ public:
   //!
   //! \param host hostname to be connected to
   //! \param port port to be connected to
-  //! \param callback callback to be called on new connections (may be null, connections are then handled automatically by the tcp_server object)
+  //! \param callback callback to be called on new connections
+  //! (may be null, connections are then handled automatically by the tcp_server object)
   //!
-  void start(const std::string& host, std::uint32_t port, const on_new_connection_callback_t& callback = nullptr);
+  void start(const std::string& sHost, std::uint32_t uPort, const on_new_connection_callback_t& callback = nullptr);
 
   //!
   //! Disconnect the tcp_server if it was currently running.
   //!
-  //! \param wait_for_removal When sets to true, disconnect blocks until the underlying TCP server has been effectively removed from the io_service and that all the underlying callbacks have completed.
-  //! \param recursive_wait_for_removal When sets to true and wait_for_removal is also set to true, blocks until all the underlying TCP client connected to the TCP server have been effectively removed from the io_service and that all the underlying callbacks have completed.
+  //! \param wait_for_removal When sets to true, disconnect blocks until the underlying TCP server has been effectively
+  //! removed from the io_service and that all the underlying callbacks have completed.
+  //! \param recursive_wait_for_removal When sets to true and wait_for_removal is also set to true,
+  //! blocks until all the underlying TCP client connected to the TCP server have been effectively removed
+  //! from the io_service and that all the underlying callbacks have completed.
   //!
-  void stop(bool wait_for_removal = false, bool recursive_wait_for_removal = true);
+  void stop(bool bWaitForRemoval = false, bool bRecursiveWaitForRemoval = true);
 
   //!
   //! \return whether the server is currently running or not
@@ -144,32 +151,32 @@ private:
   //! store io_service
   //! prevent deletion of io_service before the tcp_server itself
   //!
-  std::shared_ptr<io_service> m_io_service;
+  std::shared_ptr<io_service>                       m_ptrIOService;
 
   //1
   //! server socket
   //!
-  tacopie::tcp_socket m_socket;
+  tacopie::tcp_socket                               m_tcpSocket;
 
   //!
   //! whether the server is currently running or not
   //!
-  std::atomic<bool> m_is_running = ATOMIC_VAR_INIT(false);
+  std::atomic<bool>                                 m_bIsRunning_a = ATOMIC_VAR_INIT(false);
 
   //!
   //! clients
   //!
-  std::list<std::shared_ptr<tacopie::tcp_client>> m_clients;
+  std::list<std::shared_ptr<tacopie::tcp_client>>   m_lstClients;
 
   //!
   //! clients thread safety
   //!
-  std::mutex m_clients_mtx;
+  std::mutex                                        m_mtxClients;
 
   //!
   //! on new connection callback
   //!
-  on_new_connection_callback_t m_on_new_connection_callback;
+  on_new_connection_callback_t                      m_callbackOnNewConnection;
 };
 
 } // namespace tacopie

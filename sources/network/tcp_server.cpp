@@ -33,8 +33,8 @@ namespace tacopie {
 //!
 
 tcp_server::tcp_server(void)
-: m_io_service(get_default_io_service())
-, m_on_new_connection_callback(nullptr) { __TACOPIE_LOG(debug, "create tcp_server"); }
+: m_ptrIOService(get_default_io_service())
+, m_callbackOnNewConnection(nullptr) { __TACOPIE_LOG(debug, "create tcp_server"); }
 
 tcp_server::~tcp_server(void) {
   __TACOPIE_LOG(debug, "destroy tcp_server");
@@ -46,36 +46,36 @@ tcp_server::~tcp_server(void) {
 //!
 
 void
-tcp_server::start(const std::string& host, std::uint32_t port, const on_new_connection_callback_t& callback) {
+tcp_server::start(const std::string& sHost, std::uint32_t uPort, const on_new_connection_callback_t& callback) {
   if (is_running()) { __TACOPIE_THROW(warn, "tcp_server is already running"); }
 
-  m_socket.bind(host, port);
-  m_socket.listen(__TACOPIE_CONNECTION_QUEUE_SIZE);
+  m_tcpSocket.bind(sHost, uPort);
+  m_tcpSocket.listen(__TACOPIE_CONNECTION_QUEUE_SIZE);
 
-  m_io_service->track(m_socket);
-  m_io_service->set_rd_callback(m_socket, std::bind(&tcp_server::on_read_available, this, std::placeholders::_1));
-  m_on_new_connection_callback = callback;
+  m_ptrIOService->track(m_tcpSocket);
+  m_ptrIOService->set_rd_callback(m_tcpSocket, std::bind(&tcp_server::on_read_available, this, std::placeholders::_1));
+  m_callbackOnNewConnection = callback;
 
-  m_is_running = true;
+  m_bIsRunning_a = true;
 
   __TACOPIE_LOG(info, "tcp_server running");
 }
 
 void
-tcp_server::stop(bool wait_for_removal, bool recursive_wait_for_removal) {
+tcp_server::stop(bool bWaitForRemoval, bool bRecursiveWaitForRemoval) {
   if (!is_running()) { return; }
 
-  m_is_running = false;
+  m_bIsRunning_a = false;
 
-  m_io_service->untrack(m_socket);
-  if (wait_for_removal) { m_io_service->wait_for_removal(m_socket); }
-  m_socket.close();
+  m_ptrIOService->untrack(m_tcpSocket);
+  if (bWaitForRemoval) { m_ptrIOService->wait_for_removal(m_tcpSocket); }
+  m_tcpSocket.close();
 
-  std::lock_guard<std::mutex> lock(m_clients_mtx);
-  for (auto& client : m_clients) {
-    client->disconnect(recursive_wait_for_removal && wait_for_removal);
+  std::lock_guard<std::mutex> lock(m_mtxClients);
+  for (auto& client : m_lstClients) {
+    client->disconnect(bRecursiveWaitForRemoval && bWaitForRemoval);
   }
-  m_clients.clear();
+  m_lstClients.clear();
 
   __TACOPIE_LOG(info, "tcp_server stopped");
 }
@@ -89,15 +89,14 @@ tcp_server::on_read_available(fd_t) {
   try {
     __TACOPIE_LOG(info, "tcp_server received new connection");
 
-    auto client = std::make_shared<tcp_client>(m_socket.accept());
+    auto ptrTcpClient = std::make_shared<tcp_client>(m_tcpSocket.accept());
 
-    if (!m_on_new_connection_callback || !m_on_new_connection_callback(client)) {
+    if (!m_callbackOnNewConnection || !m_callbackOnNewConnection(ptrTcpClient)) {
       __TACOPIE_LOG(info, "connection handling delegated to tcp_server");
 
-      client->set_on_disconnection_handler(std::bind(&tcp_server::on_client_disconnected, this, client));
-      m_clients.push_back(client);
-    }
-    else {
+      ptrTcpClient->set_on_disconnection_handler(std::bind(&tcp_server::on_client_disconnected, this, ptrTcpClient));
+      m_lstClients.push_back(ptrTcpClient);
+    } else {
       __TACOPIE_LOG(info, "connection handled by tcp_server wrapper");
     }
   }
@@ -119,10 +118,10 @@ tcp_server::on_client_disconnected(const std::shared_ptr<tcp_client>& client) {
 
   __TACOPIE_LOG(debug, "handle server's client disconnection");
 
-  std::lock_guard<std::mutex> lock(m_clients_mtx);
-  auto it = std::find(m_clients.begin(), m_clients.end(), client);
+  std::lock_guard<std::mutex> lock(m_mtxClients);
+  auto pos = std::find(m_lstClients.begin(), m_lstClients.end(), client);
 
-  if (it != m_clients.end()) { m_clients.erase(it); }
+  if (pos != m_lstClients.end()) { m_lstClients.erase(pos); }
 }
 
 //!
@@ -131,7 +130,7 @@ tcp_server::on_client_disconnected(const std::shared_ptr<tcp_client>& client) {
 
 bool
 tcp_server::is_running(void) const {
-  return m_is_running;
+  return m_bIsRunning_a;
 }
 
 //!
@@ -140,12 +139,12 @@ tcp_server::is_running(void) const {
 
 tcp_socket&
 tcp_server::get_socket(void) {
-  return m_socket;
+  return m_tcpSocket;
 }
 
 const tcp_socket&
 tcp_server::get_socket(void) const {
-  return m_socket;
+  return m_tcpSocket;
 }
 
 //!
@@ -153,7 +152,7 @@ tcp_server::get_socket(void) const {
 //!
 const std::shared_ptr<tacopie::io_service>&
 tcp_server::get_io_service(void) const {
-  return m_io_service;
+  return m_ptrIOService;
 }
 
 //!
@@ -162,7 +161,7 @@ tcp_server::get_io_service(void) const {
 
 const std::list<std::shared_ptr<tacopie::tcp_client>>&
 tcp_server::get_clients(void) const {
-  return m_clients;
+  return m_lstClients;
 }
 
 //!
@@ -170,7 +169,7 @@ tcp_server::get_clients(void) const {
 //!
 bool
 tcp_server::operator==(const tcp_server& rhs) const {
-  return m_socket == rhs.m_socket;
+  return m_tcpSocket == rhs.m_tcpSocket;
 }
 
 bool

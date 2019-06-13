@@ -35,12 +35,12 @@
 #include <cstring>
 
 #ifdef __GNUC__
-#   include <Ws2tcpip.h>	   // Mingw / gcc on windows
+#   include <Ws2tcpip.h>       // Mingw / gcc on windows
    #define _WIN32_WINNT 0x0501
    #include <winsock2.h>
    #   include <Ws2tcpip.h>
    extern "C" {
-   WINSOCK_API_LINKAGE  INT WSAAPI inet_pton( INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
+   WINSOCK_API_LINKAGE  INT WSAAPI inet_pton(INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
    WINSOCK_API_LINKAGE  PCSTR WSAAPI inet_ntop(INT  Family, PVOID pAddr, PSTR pStringBuf, size_t StringBufSize);
    }
 
@@ -54,111 +54,110 @@
 namespace tacopie {
 
 void
-tcp_socket::connect(const std::string& host, std::uint32_t port, std::uint32_t timeout_msecs) {
+tcp_socket::connect(const std::string& sHost, std::uint32_t uPort, std::uint32_t uTimeoutMsecs) {
   //! Reset host and port
-  m_host = host;
-  m_port = port;
+  m_sHost = sHost;
+  m_uPort = uPort;
 
   create_socket_if_necessary();
   check_or_set_type(type::CLIENT);
 
-  struct sockaddr_storage ss;
-  socklen_t addr_len;
+  sockaddr_storage  sockAddrStorage;
+  socklen_t         nAddrLen;
 
   //! 0-init addr info struct
-  std::memset(&ss, 0, sizeof(ss));
+  std::memset(&sockAddrStorage, 0, sizeof(sockAddrStorage));
 
   if (is_ipv6()) {
     //! init sockaddr_in6 struct
-    struct sockaddr_in6* addr = reinterpret_cast<struct sockaddr_in6*>(&ss);
+    sockaddr_in6* pSockAddr6 = reinterpret_cast<sockaddr_in6*>(&sockAddrStorage);
     //! convert addr
-    if (::inet_pton(AF_INET6, host.data(), &addr->sin6_addr) < 0) {
+    if (::inet_pton(AF_INET6, sHost.data(), &pSockAddr6->sin6_addr) < 0) {
       __TACOPIE_THROW(error, "inet_pton() failure");
     }
     //! remaining fields
-    ss.ss_family    = AF_INET6;
-    addr->sin6_port = htons(port);
-    addr_len        = sizeof(*addr);
-  }
-  else {
-    struct addrinfo* result = nullptr;
-    struct addrinfo hints;
+    sockAddrStorage.ss_family   = AF_INET6;
+    pSockAddr6->sin6_port       = htons(uPort);
+    nAddrLen                    = sizeof(*pSockAddr6);
+  } else {
+    addrinfo*   pAddrInfoResult = nullptr;
+    addrinfo    addrInfo;
 
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_family   = AF_INET;
+    memset(&addrInfo, 0, sizeof(addrInfo));
+    addrInfo.ai_socktype = SOCK_STREAM;
+    addrInfo.ai_family   = AF_INET;
 
     //! resolve DNS
-    if (getaddrinfo(host.c_str(), nullptr, &hints, &result) != 0) { __TACOPIE_THROW(error, "getaddrinfo() failure"); }
+    if (getaddrinfo(sHost.c_str(), nullptr, &addrInfo, &pAddrInfoResult) != 0) {
+        __TACOPIE_THROW(error, "getaddrinfo() failure");
+    }
 
     //! init sockaddr_in struct
-    struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(&ss);
+    sockaddr_in* pSockAddr4 = reinterpret_cast<sockaddr_in*>(&sockAddrStorage);
     //! host
-    addr->sin_addr = ((struct sockaddr_in*) (result->ai_addr))->sin_addr;
+    pSockAddr4->sin_addr = (reinterpret_cast<sockaddr_in*>(pAddrInfoResult->ai_addr))->sin_addr;
     //! Remaining fields
-    addr->sin_port = htons(port);
-    ss.ss_family   = AF_INET;
-    addr_len       = sizeof(*addr);
+    pSockAddr4->sin_port        = htons(uPort);
+    sockAddrStorage.ss_family   = AF_INET;
+    nAddrLen                    = sizeof(*pSockAddr4);
 
-    freeaddrinfo(result);
+    freeaddrinfo(pAddrInfoResult);
   }
 
-  if (timeout_msecs > 0) {
+  if (uTimeoutMsecs > 0) {
     //! for timeout connection handling:
     //!  1. set socket to non blocking
     //!  2. connect
     //!  3. poll select
     //!  4. check connection status
-    u_long mode = 1;
-    if (ioctlsocket(m_fd, FIONBIO, &mode) != 0) {
+    u_long uMode = 1;
+    if (ioctlsocket(m_fd, FIONBIO, &uMode) != 0) {
       close();
       __TACOPIE_THROW(error, "connect() set non-blocking failure");
     }
-  }
-  else {
+  } else {
     //! For no timeout case, still make sure that the socket is in blocking mode
     //! As reported in #32, this might not be the case on some OS
-    u_long mode = 0;
-    if (ioctlsocket(m_fd, FIONBIO, &mode) != 0) {
+    u_long uMode = 0;
+    if (ioctlsocket(m_fd, FIONBIO, &uMode) != 0) {
       close();
       __TACOPIE_THROW(error, "connect() set blocking failure");
     }
   }
 
-  int ret = ::connect(m_fd, reinterpret_cast<const struct sockaddr*>(&ss), addr_len);
-  if (ret == -1 && WSAGetLastError() != WSAEWOULDBLOCK) {
+  int nReturn = ::connect(m_fd, reinterpret_cast<const sockaddr*>(&sockAddrStorage), nAddrLen);
+  if (nReturn == -1 && WSAGetLastError() != WSAEWOULDBLOCK) {
     close();
     __TACOPIE_THROW(error, "connect() failure");
   }
 
-  if (timeout_msecs > 0) {
-    timeval tv;
-    tv.tv_sec  = (timeout_msecs / 1000);
-    tv.tv_usec = ((timeout_msecs - (tv.tv_sec * 1000)) * 1000);
+  if (uTimeoutMsecs > 0) {
+    timeval timeVal;
+    timeVal.tv_sec  = (uTimeoutMsecs / 1000);
+    timeVal.tv_usec = ((uTimeoutMsecs - (timeVal.tv_sec * 1000)) * 1000);
 
-    FD_SET set;
-    FD_ZERO(&set);
-    FD_SET(m_fd, &set);
+    FD_SET fdSet;
+    FD_ZERO(&fdSet);
+    FD_SET(m_fd, &fdSet);
 
     //! 1 means we are connected.
     //! 0 means a timeout.
-    if (select(static_cast<int>(m_fd) + 1, NULL, &set, NULL, &tv) == 1) {
+    if (select(static_cast<int>(m_fd) + 1, NULL, &fdSet, NULL, &timeVal) == 1) {
       //! Make sure there are no async connection errors
-      int err = 0;
-      int len = sizeof(len);
-      if (getsockopt(m_fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&err), &len) == -1 || err != 0) {
+      int nErr = 0;
+      int nLen = sizeof(nLen);
+      if (getsockopt(m_fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&nErr), &nLen) == -1 || nErr != 0) {
         close();
         __TACOPIE_THROW(error, "connect() failure");
       }
 
       //! Set back to blocking mode as the user of this class is expecting
-      u_long mode = 0;
-      if (ioctlsocket(m_fd, FIONBIO, &mode) != 0) {
+      u_long uMode = 0;
+      if (ioctlsocket(m_fd, FIONBIO, &uMode) != 0) {
         close();
         __TACOPIE_THROW(error, "connect() set blocking failure");
       }
-    }
-    else {
+    } else {
       close();
       __TACOPIE_THROW(error, "connect() timed out");
     }
@@ -170,53 +169,54 @@ tcp_socket::connect(const std::string& host, std::uint32_t port, std::uint32_t t
 //!
 
 void
-tcp_socket::bind(const std::string& host, std::uint32_t port) {
+tcp_socket::bind(const std::string& sHost, std::uint32_t uPort) {
   //! Reset host and port
-  m_host = host;
-  m_port = port;
+  m_sHost = sHost;
+  m_uPort = uPort;
 
   create_socket_if_necessary();
   check_or_set_type(type::SERVER);
 
-  struct sockaddr_storage ss;
-  socklen_t addr_len;
+  sockaddr_storage  sockAddrStorage;
+  socklen_t         nAddrLen;
 
   //! 0-init addr info struct
-  std::memset(&ss, 0, sizeof(ss));
+  std::memset(&sockAddrStorage, 0, sizeof(sockAddrStorage));
 
   if (is_ipv6()) {
     //! init sockaddr_in6 struct
-    struct sockaddr_in6* addr = reinterpret_cast<struct sockaddr_in6*>(&ss);
+    sockaddr_in6*   pSockAddr6 = reinterpret_cast<sockaddr_in6*>(&sockAddrStorage);
     //! convert addr
-    if (::inet_pton(AF_INET6, host.data(), &addr->sin6_addr) < 0) {
+    if (::inet_pton(AF_INET6, sHost.data(), &pSockAddr6->sin6_addr) < 0) {
       __TACOPIE_THROW(error, "inet_pton() failure");
     }
     //! remaining fields
-    addr->sin6_port = htons(port);
-    ss.ss_family    = AF_INET6;
-    addr_len        = sizeof(*addr);
-  }
-  else {
-    struct addrinfo* result = nullptr;
+    pSockAddr6->sin6_port       = htons(uPort);
+    sockAddrStorage.ss_family   = AF_INET6;
+    nAddrLen                    = sizeof(*pSockAddr6);
+  } else {
+    addrinfo*       pAddInfoResult = nullptr;
 
     //! dns resolution
-    if (getaddrinfo(host.c_str(), nullptr, nullptr, &result) != 0) {
+    if (getaddrinfo(sHost.c_str(), nullptr, nullptr, &pAddInfoResult) != 0) {
       __TACOPIE_THROW(error, "getaddrinfo() failure");
     }
 
     //! init sockaddr_in struct
-    struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(&ss);
+    sockaddr_in*    pSockAddr4 = reinterpret_cast<sockaddr_in*>(&sockAddrStorage);
     //! addr
-    addr->sin_addr = ((struct sockaddr_in*) (result->ai_addr))->sin_addr;
+    pSockAddr4->sin_addr = (reinterpret_cast<sockaddr_in*>(pAddInfoResult->ai_addr))->sin_addr;
     //! remaining fields
-    addr->sin_port = htons(port);
-    ss.ss_family   = AF_INET;
-    addr_len       = sizeof(*addr);
+    pSockAddr4->sin_port        = htons(uPort);
+    sockAddrStorage.ss_family   = AF_INET;
+    nAddrLen                    = sizeof(*pSockAddr4);
 
-    freeaddrinfo(result);
+    freeaddrinfo(pAddInfoResult);
   }
 
-  if (::bind(m_fd, reinterpret_cast<const struct sockaddr*>(&ss), addr_len) == SOCKET_ERROR) { __TACOPIE_THROW(error, "bind() failure"); }
+  if (::bind(m_fd, reinterpret_cast<const sockaddr*>(&sockAddrStorage), nAddrLen) == SOCKET_ERROR) {
+      __TACOPIE_THROW(error, "bind() failure");
+  }
 }
 
 //!
@@ -230,8 +230,8 @@ tcp_socket::close(void) {
     closesocket(m_fd);
   }
 
-  m_fd   = __TACOPIE_INVALID_FD;
-  m_type = type::UNKNOWN;
+  m_fd      = __TACOPIE_INVALID_FD;
+  m_eType   = type::UNKNOWN;
 }
 //!
 //! create a new socket if no socket has been initialized yet
@@ -246,14 +246,15 @@ tcp_socket::create_socket_if_necessary(void) {
   short family;
   if (is_ipv6()) {
     family = AF_INET6;
-  }
-  else {
+  } else {
     family = AF_INET;
   }
   m_fd   = socket(family, SOCK_STREAM, 0);
-  m_type = type::UNKNOWN;
+  m_eType = type::UNKNOWN;
 
-  if (m_fd == __TACOPIE_INVALID_FD) { __TACOPIE_THROW(error, "tcp_socket::create_socket_if_necessary: socket() failure"); }
+  if (m_fd == __TACOPIE_INVALID_FD) {
+      __TACOPIE_THROW(error, "tcp_socket::create_socket_if_necessary: socket() failure");
+  }
 }
 
 } // namespace tacopie

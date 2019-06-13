@@ -89,16 +89,18 @@ public:
   //!
   //! \param host Hostname of the target server
   //! \param port Port of the target server
-  //! \param timeout_msecs maximum time to connect (will block until connect succeed or timeout expire). 0 will block undefinitely. If timeout expires, connection fails
+  //! \param timeout_msecs maximum time to connect (will block until connect succeed or timeout expire).
+  //! 0 will block undefinitely. If timeout expires, connection fails
   //!
   void connect(const std::string& host, std::uint32_t port, std::uint32_t timeout_msecs = 0);
 
   //!
   //! Disconnect the tcp_client if it was currently connected.
   //!
-  //! \param wait_for_removal When sets to true, disconnect blocks until the underlying TCP client has been effectively removed from the io_service and that all the underlying callbacks have completed.
+  //! \param wait_for_removal When sets to true, disconnect blocks until the underlying TCP client has been
+  //! effectively removed from the io_service and that all the underlying callbacks have completed.
   //!
-  void disconnect(bool wait_for_removal = false);
+  void disconnect(bool bWaitForRemoval = false);
 
   //!
   //! \return whether the client is currently connected or not
@@ -161,33 +163,35 @@ public:
   //!
   //! structure to store read requests information
   //!  * size: Number of bytes to read
-  //!  * async_read_callback: Callback to be called on a read operation completion, even though the operation read less bytes than requested.
+  //!  * async_read_callback: Callback to be called on a read operation completion,
+  //! even though the operation read less bytes than requested.
   //!
   struct read_request {
     //!
     //! number of bytes to read
     //!
-    std::size_t size;
+    std::size_t             nSizeToRead;
     //!
     //! callback to be executed on read operation completion
     //!
-    async_read_callback_t async_read_callback;
+    async_read_callback_t   callbackAsyncRead;
   };
 
   //!
   //! structure to store write requests information
   //!  * buffer: Bytes to be written
-  //!  * async_write_callback: Callback to be called on a write operation completion, even though the operation wrote less bytes than requested.
+  //!  * async_write_callback: Callback to be called on a write operation completion,
+  //! even though the operation wrote less bytes than requested.
   //!
   struct write_request {
     //!
     //! bytes to write
     //!
-    std::vector<char> buffer;
+    std::vector<char>       vctBuffer;
     //!
     //! callback to be executed on write operation completion
     //!
-    async_write_callback_t async_write_callback;
+    async_write_callback_t  callbackAsyncWrite;
   };
 
 public:
@@ -235,7 +239,7 @@ public:
   //!
   //! \param disconnection_handler the handler to be called on disconnection
   //!
-  void set_on_disconnection_handler(const disconnection_handler_t& disconnection_handler);
+  void set_on_disconnection_handler(const disconnection_handler_t& handlerDisconnection);
 
 private:
   //!
@@ -291,40 +295,40 @@ private:
   //! store io_service
   //! prevent deletion of io_service before the tcp_client itself
   //!
-  std::shared_ptr<io_service> m_io_service;
+  std::shared_ptr<io_service>           m_ptrIOService;
 
   //!
   //! client socket
   //!
-  tacopie::tcp_socket m_socket;
+  tacopie::tcp_socket                   m_tcpSocket;
 
   //!
   //! whether the client is currently connected or not
   //!
-  std::atomic<bool> m_is_connected = ATOMIC_VAR_INIT(false);
+  std::atomic<bool>                     m_bIsConnected_a = ATOMIC_VAR_INIT(false);
 
   //!
   //! read requests
   //!
-  std::queue<read_request> m_read_requests;
+  std::queue<read_request>              m_queReadRequests;
   //!
   //! write requests
   //!
-  std::queue<write_request> m_write_requests;
+  std::queue<write_request>             m_queWriteRequests;
 
   //!
   //! read requests thread safety
   //!
-  std::mutex m_read_requests_mtx;
+  std::mutex                            m_mtxReadRequests;
   //!
   //! write requests thread safety
   //!
-  std::mutex m_write_requests_mtx;
+  std::mutex                            m_mtxWriteRequests;
 
   //!
   //! disconnection handler
   //!
-  disconnection_handler_t m_disconnection_handler;
+  disconnection_handler_t               m_handlerDisconnection;
 };
 
 } // namespace tacopie

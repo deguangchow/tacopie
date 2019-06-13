@@ -17,8 +17,7 @@ on_new_message(tacopie::tcp_client& client, const tacopie::tcp_client::read_resu
     if (res.success) {
         std::string buf(res.buffer.begin(), res.buffer.end());
         std::cout << "Client recv data: " << buf << std::endl;
-    }
-    else {
+    } else {
         std::cout << "Client disconnected" << std::endl;
         client.disconnect();
     }
@@ -29,6 +28,7 @@ TEST(TacopieClient, ValidConnectionDefinedHost) {
     EXPECT_FALSE(client.is_connected());
     EXPECT_NO_THROW(client.connect("127.0.0.1", 3001));
     EXPECT_TRUE(client.is_connected());
+    EXPECT_NO_THROW(client.disconnect());
 }
 
 TEST(TacopieCilent, InvalidConnection) {
@@ -36,6 +36,7 @@ TEST(TacopieCilent, InvalidConnection) {
     EXPECT_FALSE(client.is_connected());
     EXPECT_THROW(client.connect("invalid url", 1234), tacopie::tacopie_error);
     EXPECT_FALSE(client.is_connected());
+    EXPECT_NO_THROW(client.disconnect());
 }
 
 TEST(TacopieClient, AlreadyConnected) {
@@ -46,13 +47,14 @@ TEST(TacopieClient, AlreadyConnected) {
     EXPECT_TRUE(client.is_connected());
     EXPECT_THROW(client.connect("127.0.0.1", 3001), tacopie::tacopie_error);
     EXPECT_TRUE(client.is_connected());
+    EXPECT_NO_THROW(client.disconnect());
 }
 
 TEST(TacopieClient, Disconnection) {
     tacopie::tcp_client client;
     client.connect("127.0.0.1", 3001);
     EXPECT_TRUE(client.is_connected());
-    client.disconnect();
+    EXPECT_NO_THROW(client.disconnect());
     EXPECT_FALSE(client.is_connected());
 }
 
@@ -70,6 +72,7 @@ TEST(TacopieClient, GetHostPort) {
 
     EXPECT_EQ("127.0.0.1", client.get_host());
     EXPECT_EQ(3001, client.get_port());
+    EXPECT_NO_THROW(client.disconnect());
 }
 
 TEST(TacopieClient, Operator) {
@@ -80,6 +83,8 @@ TEST(TacopieClient, Operator) {
 
     EXPECT_FALSE(client1 == client2);
     EXPECT_TRUE(client1 != client2);
+    EXPECT_NO_THROW(client1.disconnect());
+    EXPECT_NO_THROW(client2.disconnect());
 }
 
 TEST(TacopieClient, AsyncWriteRead) {
@@ -96,6 +101,7 @@ TEST(TacopieClient, AsyncWriteRead) {
     EXPECT_NO_THROW(client.async_write(wr_req));
     EXPECT_NO_THROW(client.async_read({ 1024, std::bind(&on_new_message, std::ref(client), std::placeholders::_1) }));
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    EXPECT_NO_THROW(client.disconnect());
 }
 
 TEST(TacopieClient, GetSocket) {
@@ -104,4 +110,7 @@ TEST(TacopieClient, GetSocket) {
 
     EXPECT_NO_THROW(client.get_socket());
     EXPECT_NO_THROW(EXPECT_FALSE(nullptr == client.get_io_service()));
+    EXPECT_NO_THROW(client.disconnect());
 }
+
+

@@ -33,7 +33,8 @@ namespace tacopie {
 //!
 //! tacopie::tcp_socket is the class providing low-level TCP socket features.
 //! The tcp_socket provides a simple but convenient abstraction to unix and windows sockets.
-//! It also provides a socket type checker to ensure that server-only operations are only processable on server sockets, and client-only operations are only processable on client sockets.
+//! It also provides a socket type checker to ensure that server-only operations are only processable on server
+//! sockets, and client-only operations are only processable on client sockets.
 //!
 class tcp_socket {
 public:
@@ -63,7 +64,7 @@ public:
   //! \param host host associated to the socket
   //! \param port port associated to the socket
   //! \param t type of the socket (client or server)
-  tcp_socket(fd_t fd, const std::string& host, std::uint32_t port, type t);
+  tcp_socket(fd_t fd, const std::string& sHost, std::uint32_t uPort, type eType);
 
   //! move ctor
   tcp_socket(tcp_socket&&);
@@ -91,36 +92,41 @@ public:
 public:
   //!
   //! Read data synchronously from the underlying socket.
-  //! The socket must be of type client to process this operation. If the type of the socket is unknown, the socket type will be set to client.
+  //! The socket must be of type client to process this operation. If the type of the socket is unknown,
+  //! the socket type will be set to client.
   //!
   //! \param size_to_read Number of bytes to read (might read less than requested)
   //! \return Returns the read bytes
   //!
-  std::vector<char> recv(std::size_t size_to_read);
+  std::vector<char> recv(std::size_t uSizeToRead);
 
   //!
   //! Send data synchronously to the underlying socket.
-  //! The socket must be of type client to process this operation. If the type of the socket is unknown, the socket type will be set to client.
+  //! The socket must be of type client to process this operation. If the type of the socket is unknown,
+  //! the socket type will be set to client.
   //!
   //! \param data Buffer containing bytes to be written
   //! \param size_to_write Number of bytes to send
   //! \return Returns the number of bytes that were effectively sent.
   //!
-  std::size_t send(const std::vector<char>& data, std::size_t size_to_write);
+  std::size_t send(const std::vector<char>& vctData, std::size_t uSizeToWrite);
 
   //!
   //! Connect the socket to the remote server.
-  //! The socket must be of type client to process this operation. If the type of the socket is unknown, the socket type will be set to client.
+  //! The socket must be of type client to process this operation. If the type of the socket is unknown,
+  //! the socket type will be set to client.
   //!
   //! \param host Hostname of the target server
   //! \param port Port of the target server
-  //! \param timeout_msecs maximum time to connect (will block until connect succeed or timeout expire). 0 will block undefinitely. If timeout expires, connection fails
+  //! \param timeout_msecs maximum time to connect (will block until connect succeed or timeout expire).
+  //! 0 will block undefinitely. If timeout expires, connection fails
   //!
   void connect(const std::string& host, std::uint32_t port, std::uint32_t timeout_msecs = 0);
 
   //!
   //! Binds the socket to the given host and port.
-  //! The socket must be of type server to process this operation. If the type of the socket is unknown, the socket type will be set to server.
+  //! The socket must be of type server to process this operation. If the type of the socket is unknown,
+  //! the socket type will be set to server.
   //!
   //! \param host Hostname to be bind to
   //! \param port Port to be bind to
@@ -129,15 +135,17 @@ public:
 
   //!
   //! Make the socket listen for incoming connections.
-  //! Socket must be of type server to process this operation. If the type of the socket is unknown, the socket type will be set to server.
+  //! Socket must be of type server to process this operation. If the type of the socket is unknown,
+  //! the socket type will be set to server.
   //!
   //! \param max_connection_queue Size of the queue for incoming connections to be processed by the server
   //!
-  void listen(std::size_t max_connection_queue);
+  void listen(std::size_t uMaxConnectionQueue);
 
   //!
   //! Accept a new incoming connection.
-  //! The socket must be of type server to process this operation. If the type of the socket is unknown, the socket type will be set to server.
+  //! The socket must be of type server to process this operation.
+  //! If the type of the socket is unknown, the socket type will be set to server.
   //!
   //! \return Return the tcp_socket associated to the newly accepted connection.
   //!
@@ -203,21 +211,21 @@ private:
   //!
   //! fd associated to the socket
   //!
-  fd_t m_fd;
+  fd_t              m_fd;
 
   //!
   //! socket hostname information
   //!
-  std::string m_host;
+  std::string       m_sHost;
   //!
   //! socket port information
   //!
-  std::uint32_t m_port;
+  std::uint32_t     m_uPort;
 
   //!
   //! type of the socket
   //!
-  type m_type;
+  type              m_eType;
 };
 
 } // namespace tacopie

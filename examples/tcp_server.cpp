@@ -31,11 +31,11 @@
 #include <Winsock2.h>
 #endif /* _WIN32 */
 
-std::condition_variable cv;
+std::condition_variable g_cv;
 
 void
 signint_handler(int) {
-  cv.notify_all();
+  g_cv.notify_all();
 }
 
 void
@@ -45,8 +45,7 @@ on_new_message(const std::shared_ptr<tacopie::tcp_client>& client, const tacopie
       std::cout << "Client recv data: " << buf << std::endl;
     client->async_write({res.buffer, nullptr});
     client->async_read({1024, std::bind(&on_new_message, client, std::placeholders::_1)});
-  }
-  else {
+  } else {
     std::cout << "Client disconnected" << std::endl;
     client->disconnect();
   }
@@ -80,7 +79,7 @@ main(void) {
 
   std::mutex mtx;
   std::unique_lock<std::mutex> lock(mtx);
-  cv.wait(lock);
+  g_cv.wait(lock);
 
 #ifdef _WIN32
   WSACleanup();

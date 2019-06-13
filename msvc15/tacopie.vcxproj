@@ -45,6 +45,8 @@ SOFTWARE.
     <ClCompile Include="..\sources\network\io_service.cpp" />
     <ClCompile Include="..\sources\network\tcp_client.cpp" />
     <ClCompile Include="..\sources\network\tcp_server.cpp" />
+    <ClCompile Include="..\sources\network\unix\unix_self_pipe.cpp" />
+    <ClCompile Include="..\sources\network\unix\unix_tcp_socket.cpp" />
     <ClCompile Include="..\sources\network\windows\windows_self_pipe.cpp" />
     <ClCompile Include="..\sources\network\windows\windows_tcp_socket.cpp" />
     <ClCompile Include="..\sources\utils\error.cpp" />

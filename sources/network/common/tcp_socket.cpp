@@ -26,12 +26,12 @@
 
 #ifdef _WIN32
 #ifdef __GNUC__
-#   include <Ws2tcpip.h>	   // Mingw / gcc on windows
+#   include <Ws2tcpip.h>       // Mingw / gcc on windows
    #define _WIN32_WINNT 0x0501
    #include <winsock2.h>
    #   include <Ws2tcpip.h>
    extern "C" {
-   WINSOCK_API_LINKAGE  INT WSAAPI inet_pton( INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
+   WINSOCK_API_LINKAGE  INT WSAAPI inet_pton(INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
    WINSOCK_API_LINKAGE  PCSTR WSAAPI inet_ntop(INT  Family, PVOID pAddr, PSTR pStringBuf, size_t StringBufSize);
    }
 
@@ -59,7 +59,7 @@
 
 #if _WIN32
 #define __TACOPIE_LENGTH(size) static_cast<int>(size) // for Windows, convert buffer size to `int`
-#pragma warning(disable : 4996)                       // for Windows, `inet_ntoa` is deprecated as it does not support IPv6
+#pragma warning(disable : 4996)                // for Windows, `inet_ntoa` is deprecated as it does not support IPv6
 #else
 #define __TACOPIE_LENGTH(size) size // for Unix, keep buffer size as `size_t`
 #endif                              /* _WIN32 */
@@ -72,20 +72,20 @@ namespace tacopie {
 
 tcp_socket::tcp_socket(void)
 : m_fd(__TACOPIE_INVALID_FD)
-, m_host("")
-, m_port(0)
-, m_type(type::UNKNOWN) { __TACOPIE_LOG(debug, "create tcp_socket"); }
+, m_sHost("")
+, m_uPort(0)
+, m_eType(type::UNKNOWN) { __TACOPIE_LOG(debug, "create tcp_socket"); }
 
 //!
 //! custom ctor
 //! build socket from existing file descriptor
 //!
 
-tcp_socket::tcp_socket(fd_t fd, const std::string& host, std::uint32_t port, type t)
+tcp_socket::tcp_socket(fd_t fd, const std::string& sHost, std::uint32_t uPort, type eType)
 : m_fd(fd)
-, m_host(host)
-, m_port(port)
-, m_type(t) { __TACOPIE_LOG(debug, "create tcp_socket"); }
+, m_sHost(sHost)
+, m_uPort(uPort)
+, m_eType(eType) { __TACOPIE_LOG(debug, "create tcp_socket"); }
 
 //!
 //! Move constructor
@@ -93,11 +93,11 @@ tcp_socket::tcp_socket(fd_t fd, const std::string& host, std::uint32_t port, typ
 
 tcp_socket::tcp_socket(tcp_socket&& socket)
 : m_fd(std::move(socket.m_fd))
-, m_host(socket.m_host)
-, m_port(socket.m_port)
-, m_type(socket.m_type) {
-  socket.m_fd   = __TACOPIE_INVALID_FD;
-  socket.m_type = type::UNKNOWN;
+, m_sHost(socket.m_sHost)
+, m_uPort(socket.m_uPort)
+, m_eType(socket.m_eType) {
+  socket.m_fd       = __TACOPIE_INVALID_FD;
+  socket.m_eType    = type::UNKNOWN;
 
   __TACOPIE_LOG(debug, "moved tcp_socket");
 }
@@ -107,33 +107,33 @@ tcp_socket::tcp_socket(tcp_socket&& socket)
 //!
 
 std::vector<char>
-tcp_socket::recv(std::size_t size_to_read) {
+tcp_socket::recv(std::size_t uSizeToRead) {
   create_socket_if_necessary();
   check_or_set_type(type::CLIENT);
 
-  std::vector<char> data(size_to_read, 0);
+  std::vector<char> vctData(uSizeToRead, 0);
 
-  ssize_t rd_size = ::recv(m_fd, const_cast<char*>(data.data()), __TACOPIE_LENGTH(size_to_read), 0);
+  ssize_t uReadSize = ::recv(m_fd, const_cast<char*>(vctData.data()), __TACOPIE_LENGTH(uSizeToRead), 0);
 
-  if (rd_size == SOCKET_ERROR) { __TACOPIE_THROW(error, "recv() failure"); }
+  if (uReadSize == SOCKET_ERROR) { __TACOPIE_THROW(error, "recv() failure"); }
 
-  if (rd_size == 0) { __TACOPIE_THROW(warn, "nothing to read, socket has been closed by remote host"); }
+  if (uReadSize == 0) { __TACOPIE_THROW(warn, "nothing to read, socket has been closed by remote host"); }
 
-  data.resize(rd_size);
+  vctData.resize(uReadSize);
 
-  return data;
+  return vctData;
 }
 
 std::size_t
-tcp_socket::send(const std::vector<char>& data, std::size_t size_to_write) {
+tcp_socket::send(const std::vector<char>& vctData, std::size_t uSizeToWrite) {
   create_socket_if_necessary();
   check_or_set_type(type::CLIENT);
 
-  ssize_t wr_size = ::send(m_fd, data.data(), __TACOPIE_LENGTH(size_to_write), 0);
+  ssize_t uWriteSize = ::send(m_fd, vctData.data(), __TACOPIE_LENGTH(uSizeToWrite), 0);
 
-  if (wr_size == SOCKET_ERROR) { __TACOPIE_THROW(error, "send() failure"); }
+  if (uWriteSize == SOCKET_ERROR) { __TACOPIE_THROW(error, "send() failure"); }
 
-  return wr_size;
+  return uWriteSize;
 }
 
 //!
@@ -141,11 +141,13 @@ tcp_socket::send(const std::vector<char>& data, std::size_t size_to_write) {
 //!
 
 void
-tcp_socket::listen(std::size_t max_connection_queue) {
+tcp_socket::listen(std::size_t uMaxConnectionQueue) {
   create_socket_if_necessary();
   check_or_set_type(type::SERVER);
 
-  if (::listen(m_fd, __TACOPIE_LENGTH(max_connection_queue)) == SOCKET_ERROR) { __TACOPIE_THROW(debug, "listen() failure"); }
+  if (::listen(m_fd, __TACOPIE_LENGTH(uMaxConnectionQueue)) == SOCKET_ERROR) {
+      __TACOPIE_THROW(debug, "listen() failure");
+  }
 }
 
 tcp_socket
@@ -153,42 +155,40 @@ tcp_socket::accept(void) {
   create_socket_if_necessary();
   check_or_set_type(type::SERVER);
 
-  struct sockaddr_storage ss;
-  socklen_t addrlen = sizeof(ss);
+  sockaddr_storage sockAddrStorage;
+  socklen_t nAddrLen = sizeof(sockAddrStorage);
 
-  fd_t client_fd = ::accept(m_fd, reinterpret_cast<struct sockaddr*>(&ss), &addrlen);
+  fd_t fdClient = ::accept(m_fd, reinterpret_cast<sockaddr*>(&sockAddrStorage), &nAddrLen);
 
-  if (client_fd == __TACOPIE_INVALID_FD) { __TACOPIE_THROW(error, "accept() failure"); }
+  if (fdClient == __TACOPIE_INVALID_FD) { __TACOPIE_THROW(error, "accept() failure"); }
 
   //! now determine host and port based on socket type
-  std::string saddr;
-  std::uint32_t port;
+  std::string       sAddr;
+  std::uint32_t     uPort;
 
   //! ipv6
-  if (ss.ss_family == AF_INET6) {
-    struct sockaddr_in6* addr6 = reinterpret_cast<struct sockaddr_in6*>(&ss);
-    char buf[INET6_ADDRSTRLEN] = {};
-    const char* addr           = ::inet_ntop(ss.ss_family, &addr6->sin6_addr, buf, INET6_ADDRSTRLEN);
+  if (sockAddrStorage.ss_family == AF_INET6) {
+    sockaddr_in6* pSockAddr6 = reinterpret_cast<sockaddr_in6*>(&sockAddrStorage);
+    char arrBuf[INET6_ADDRSTRLEN]   = {};
+    const char* pAddr   = ::inet_ntop(sockAddrStorage.ss_family, &pSockAddr6->sin6_addr, arrBuf, INET6_ADDRSTRLEN);
 
-    if (addr) {
-      saddr = std::string("[") + addr + "]";
+    if (pAddr) {
+      sAddr = std::string("[") + pAddr + "]";
     }
 
-    port = ntohs(addr6->sin6_port);
-  }
-  //! ipv4
-  else {
-    struct sockaddr_in* addr4 = reinterpret_cast<struct sockaddr_in*>(&ss);
-    char buf[INET_ADDRSTRLEN] = {};
-    const char* addr          = ::inet_ntop(ss.ss_family, &addr4->sin_addr, buf, INET_ADDRSTRLEN);
+    uPort = ntohs(pSockAddr6->sin6_port);
+  } else {//! ipv4
+    sockaddr_in* pSockAddr4 = reinterpret_cast<sockaddr_in*>(&sockAddrStorage);
+    char arrBuf[INET_ADDRSTRLEN] = {};
+    const char* pAddr   = ::inet_ntop(sockAddrStorage.ss_family, &pSockAddr4->sin_addr, arrBuf, INET_ADDRSTRLEN);
 
-    if (addr) {
-      saddr = addr;
+    if (pAddr) {
+      sAddr = pAddr;
     }
 
-    port = ntohs(addr4->sin_port);
+    uPort = ntohs(pSockAddr4->sin_port);
   }
-  return {client_fd, saddr, port, type::CLIENT};
+  return {fdClient, sAddr, uPort, type::CLIENT};
 }
 
 //!
@@ -197,10 +197,12 @@ tcp_socket::accept(void) {
 //!
 
 void
-tcp_socket::check_or_set_type(type t) {
-  if (m_type != type::UNKNOWN && m_type != t) { __TACOPIE_THROW(error, "trying to perform invalid operation on socket"); }
+tcp_socket::check_or_set_type(type eType) {
+  if (m_eType != type::UNKNOWN && m_eType != eType) {
+      __TACOPIE_THROW(error, "trying to perform invalid operation on socket");
+  }
 
-  m_type = t;
+  m_eType = eType;
 }
 
 //!
@@ -209,12 +211,12 @@ tcp_socket::check_or_set_type(type t) {
 
 const std::string&
 tcp_socket::get_host(void) const {
-  return m_host;
+  return m_sHost;
 }
 
 std::uint32_t
 tcp_socket::get_port(void) const {
-  return m_port;
+  return m_uPort;
 }
 
 //!
@@ -223,7 +225,7 @@ tcp_socket::get_port(void) const {
 
 tcp_socket::type
 tcp_socket::get_type(void) const {
-  return m_type;
+  return m_eType;
 }
 
 //!
@@ -232,8 +234,8 @@ tcp_socket::get_type(void) const {
 //!
 
 void
-tcp_socket::set_type(type t) {
-  m_type = t;
+tcp_socket::set_type(type eType) {
+  m_eType = eType;
 }
 
 //!
@@ -251,7 +253,7 @@ tcp_socket::get_fd(void) const {
 
 bool
 tcp_socket::is_ipv6(void) const {
-  return m_host.find(':') != std::string::npos;
+  return m_sHost.find(':') != std::string::npos;
 }
 
 //!
@@ -259,7 +261,7 @@ tcp_socket::is_ipv6(void) const {
 //!
 bool
 tcp_socket::operator==(const tcp_socket& rhs) const {
-  return m_fd == rhs.m_fd && m_type == rhs.m_type;
+  return m_fd == rhs.m_fd && m_eType == rhs.m_eType;
 }
 
 bool

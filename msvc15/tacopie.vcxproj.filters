@@ -56,6 +56,9 @@ SOFTWARE.
     <Filter Include="Header Files\tacopie\network">
       <UniqueIdentifier>{fa0c367c-8d92-47a6-a703-76a9e5e54463}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\network\unix">
+      <UniqueIdentifier>{d3582b89-661a-4265-907c-e4be046ddd53}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\sources\utils\error.cpp">
@@ -84,6 +87,12 @@ SOFTWARE.
     </ClCompile>
     <ClCompile Include="..\sources\network\tcp_server.cpp">
       <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sources\network\unix\unix_self_pipe.cpp">
+      <Filter>Source Files\network\unix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sources\network\unix\unix_tcp_socket.cpp">
+      <Filter>Source Files\network\unix</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

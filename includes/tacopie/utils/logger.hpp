@@ -99,7 +99,7 @@ public:
 
 public:
   //! ctor
-  logger(log_level level = log_level::info);
+  explicit logger(log_level level = log_level::info);
   //! dtor
   ~logger(void) = default;
 

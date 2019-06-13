@@ -43,4 +43,4 @@ typedef int fd_t;
 typedef SSIZE_T ssize_t;
 #endif
 
-} //! tacopie
+} //namespace tacopie

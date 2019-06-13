@@ -68,22 +68,22 @@ private:
   //!
   //! socket fd
   //!
-  fd_t m_fd;
+  fd_t              m_fd;
 
   //!
   //! socket information
   //!
-  struct sockaddr m_addr;
+  sockaddr          m_sockaddr;
 
   //!
   //! socket information (addr len)
   //!
-  int m_addr_len;
+  int               m_nAddrLen;
 #else
   //!
   //! pipe file descriptors
   //!
-  fd_t m_fds[2];
+  fd_t              m_fds[2];
 #endif /* _WIN32 */
 };
 

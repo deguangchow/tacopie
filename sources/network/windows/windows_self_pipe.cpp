@@ -42,24 +42,26 @@ self_pipe::self_pipe(void)
   m_fd = ::socket(AF_INET, SOCK_DGRAM, 0);
   if (m_fd == __TACOPIE_INVALID_FD) { __TACOPIE_THROW(error, "fail socket()"); }
 
-  u_long flags = 1;
-  ioctlsocket(m_fd, FIONBIO, &flags);
+  u_long uFlags = 1;
+  ioctlsocket(m_fd, FIONBIO, &uFlags);
 
   //! Bind server to localhost
-  struct sockaddr_in inaddr;
+  sockaddr_in inaddr;
   memset(&inaddr, 0, sizeof(inaddr));
   inaddr.sin_family      = AF_INET;
   inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   inaddr.sin_port        = 0;
-  if (bind(m_fd, (struct sockaddr*) &inaddr, sizeof(inaddr)) == SOCKET_ERROR) { __TACOPIE_THROW(error, "fail bind()"); }
+  if (bind(m_fd, reinterpret_cast<sockaddr*>(&inaddr), sizeof(inaddr)) == SOCKET_ERROR) {
+      __TACOPIE_THROW(error, "fail bind()");
+  }
 
   //! Retrieve server information
-  m_addr_len = sizeof(m_addr);
-  memset(&m_addr, 0, sizeof(m_addr));
-  if (getsockname(m_fd, &m_addr, &m_addr_len) == SOCKET_ERROR) { __TACOPIE_THROW(error, "fail getsockname()"); }
+  m_nAddrLen = sizeof(m_sockaddr);
+  memset(&m_sockaddr, 0, sizeof(m_sockaddr));
+  if (getsockname(m_fd, &m_sockaddr, &m_nAddrLen) == SOCKET_ERROR) { __TACOPIE_THROW(error, "fail getsockname()"); }
 
   //! connect read fd to the server
-  if (connect(m_fd, &m_addr, m_addr_len) == SOCKET_ERROR) { __TACOPIE_THROW(error, "fail connect()"); }
+  if (connect(m_fd, &m_sockaddr, m_nAddrLen) == SOCKET_ERROR) { __TACOPIE_THROW(error, "fail connect()"); }
 }
 
 self_pipe::~self_pipe(void) {
@@ -86,7 +88,7 @@ self_pipe::get_write_fd(void) const {
 //!
 void
 self_pipe::notify(void) {
-  (void) sendto(m_fd, "a", 1, 0, &m_addr, m_addr_len);
+  (void) sendto(m_fd, "a", 1, 0, &m_sockaddr, m_nAddrLen);
 }
 
 //!
@@ -95,7 +97,7 @@ self_pipe::notify(void) {
 void
 self_pipe::clr_buffer(void) {
   char buf[1024];
-  (void) recvfrom(m_fd, buf, 1024, 0, &m_addr, &m_addr_len);
+  (void) recvfrom(m_fd, buf, 1024, 0, &m_sockaddr, &m_nAddrLen);
 }
 
 } // namespace tacopie

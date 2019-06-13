@@ -28,10 +28,10 @@ namespace tacopie {
 //! ctor & dtor
 //!
 
-tacopie_error::tacopie_error(const std::string& what, const std::string& file, std::size_t line)
-: std::runtime_error(what)
-, m_file(file)
-, m_line(line) {}
+tacopie_error::tacopie_error(const std::string& sWhat, const std::string& sFile, std::size_t uline)
+: std::runtime_error(sWhat)
+, m_sFile(sFile)
+, m_uLine(uline) {}
 
 //!
 //! get location of the error
@@ -39,12 +39,12 @@ tacopie_error::tacopie_error(const std::string& what, const std::string& file, s
 
 const std::string&
 tacopie_error::get_file(void) const {
-  return m_file;
+  return m_sFile;
 }
 
 std::size_t
 tacopie_error::get_line(void) const {
-  return m_line;
+  return m_uLine;
 }
 
 } // namespace tacopie

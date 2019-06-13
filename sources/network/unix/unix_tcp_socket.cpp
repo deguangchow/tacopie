@@ -66,8 +66,7 @@ tcp_socket::connect(const std::string& host, std::uint32_t port, std::uint32_t t
     //! Remaining fields
     ss.ss_family = AF_UNIX;
     addr_len     = sizeof(*addr);
-  }
-  else if (is_ipv6()) {
+  } else if (is_ipv6()) {
     //! init sockaddr_in6 struct
     struct sockaddr_in6* addr = reinterpret_cast<struct sockaddr_in6*>(&ss);
     //! convert addr
@@ -78,8 +77,7 @@ tcp_socket::connect(const std::string& host, std::uint32_t port, std::uint32_t t
     ss.ss_family    = AF_INET6;
     addr->sin6_port = htons(port);
     addr_len        = sizeof(*addr);
-  }
-  else {
+  } else {
     struct addrinfo* result = nullptr;
     struct addrinfo hints;
 
@@ -112,8 +110,7 @@ tcp_socket::connect(const std::string& host, std::uint32_t port, std::uint32_t t
       close();
       __TACOPIE_THROW(error, "connect() set non-blocking failure");
     }
-  }
-  else {
+  } else {
     //! For no timeout case, still make sure that the socket is in blocking mode
     //! As reported in #32, this might not be the case on some OS
     if (fcntl(m_fd, F_SETFL, fcntl(m_fd, F_GETFL, 0) & (~O_NONBLOCK)) == -1) {
@@ -153,8 +150,7 @@ tcp_socket::connect(const std::string& host, std::uint32_t port, std::uint32_t t
         close();
         __TACOPIE_THROW(error, "connect() set blocking failure");
       }
-    }
-    else {
+    } else {
       close();
       __TACOPIE_THROW(error, "connect() timed out");
     }
@@ -190,8 +186,7 @@ tcp_socket::bind(const std::string& host, std::uint32_t port) {
     //! remaining fields
     ss.ss_family = AF_UNIX;
     addr_len     = sizeof(*addr);
-  }
-  else if (is_ipv6()) {
+  } else if (is_ipv6()) {
     //! init sockaddr_in6 struct
     struct sockaddr_in6* addr = reinterpret_cast<struct sockaddr_in6*>(&ss);
     //! convert addr
@@ -202,8 +197,7 @@ tcp_socket::bind(const std::string& host, std::uint32_t port) {
     addr->sin6_port = htons(port);
     ss.ss_family    = AF_INET6;
     addr_len        = sizeof(*addr);
-  }
-  else {
+  } else {
     struct addrinfo* result = nullptr;
 
     //! dns resolution
@@ -223,7 +217,9 @@ tcp_socket::bind(const std::string& host, std::uint32_t port) {
     freeaddrinfo(result);
   }
 
-  if (::bind(m_fd, reinterpret_cast<const struct sockaddr*>(&ss), addr_len) == -1) { __TACOPIE_THROW(error, "bind() failure"); }
+  if (::bind(m_fd, reinterpret_cast<const struct sockaddr*>(&ss), addr_len) == -1) {
+      __TACOPIE_THROW(error, "bind() failure");
+  }
 }
 
 //!
@@ -254,18 +250,18 @@ tcp_socket::create_socket_if_necessary(void) {
   short family;
   if (m_port == 0) {
     family = AF_UNIX;
-  }
-  else if (is_ipv6()) {
+  } else if (is_ipv6()) {
     family = AF_INET6;
-  }
-  else {
+  } else {
     family = AF_INET;
   }
 
   m_fd   = socket(family, SOCK_STREAM, 0);
   m_type = type::UNKNOWN;
 
-  if (m_fd == __TACOPIE_INVALID_FD) { __TACOPIE_THROW(error, "tcp_socket::create_socket_if_necessary: socket() failure"); }
+  if (m_fd == __TACOPIE_INVALID_FD) {
+      __TACOPIE_THROW(error, "tcp_socket::create_socket_if_necessary: socket() failure");
+  }
 }
 
 } // namespace tacopie

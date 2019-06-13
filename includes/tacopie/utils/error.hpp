@@ -36,7 +36,7 @@ namespace tacopie {
 class tacopie_error : public std::runtime_error {
 public:
   //! ctor
-  tacopie_error(const std::string& what, const std::string& file, std::size_t line);
+  tacopie_error(const std::string& sWhat, const std::string& sFile, std::size_t uline);
   //! assignment operator
   ~tacopie_error(void) = default;
 
@@ -60,12 +60,12 @@ private:
   //!
   //! file location of the error
   //!
-  std::string m_file;
+  std::string   m_sFile;
 
   //!
   //! line location of the error
   //!
-  std::size_t m_line;
+  std::size_t   m_uLine;
 };
 
 } // namespace tacopie

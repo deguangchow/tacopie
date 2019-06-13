@@ -65,7 +65,8 @@ public:
 
   //!
   //! add tasks to thread pool
-  //! task is enqueued and will be executed whenever all previously executed tasked have been executed (or are currently being executed)
+  //! task is enqueued and will be executed whenever all previously executed tasked have been executed
+  //! (or are currently being executed)
   //!
   //! \param task task to be executed by the threadpool
   //!
@@ -97,8 +98,10 @@ public:
   //! this can be safely called at runtime and can be useful if you need to adjust the number of workers
   //!
   //! this function returns immediately, but change might be applied in the background
-  //! that is, increasing number of threads will spwan new threads directly from this function (but they may take a while to start)
-  //! moreover, shrinking the number of threads can only be applied in the background to make sure to not stop some threads in the middle of their task
+  //! that is, increasing number of threads will spwan new threads directly from this function
+  //! (but they may take a while to start)
+  //! moreover, shrinking the number of threads can only be applied in the background to make sure to not stop
+  //! some threads in the middle of their task
   //!
   //! changing number of workers do not affect tasks to be executed and tasks currently being executed
   //!
@@ -131,37 +134,37 @@ private:
   //!
   //! threads
   //!
-  std::list<std::thread> m_workers;
+  std::list<std::thread>        m_lstWorkerThreads;
 
   //!
   //! number of threads allowed
   //!
-  std::atomic<std::size_t> m_max_nb_threads = ATOMIC_VAR_INIT(0);
+  std::atomic<std::size_t>      m_uMaxNbThreads_a       = ATOMIC_VAR_INIT(0);
 
   //!
   //! current number of running threads
   //!
-  std::atomic<std::size_t> m_nb_running_threads = ATOMIC_VAR_INIT(0);
+  std::atomic<std::size_t>      m_nNbRunningThreads_a   = ATOMIC_VAR_INIT(0);
 
   //!
   //! whether the thread_pool should stop or not
   //!
-  std::atomic<bool> m_should_stop = ATOMIC_VAR_INIT(false);
+  std::atomic<bool>             m_bShouldStop_a         = ATOMIC_VAR_INIT(false);
 
   //!
   //! tasks
   //!
-  std::queue<task_t> m_tasks;
+  std::queue<task_t>            m_queTasks;
 
   //!
   //! tasks thread safety
   //!
-  std::mutex m_tasks_mtx;
+  std::mutex                    m_mtxTasks;
 
   //!
   //! task condvar to sync on tasks changes
   //!
-  std::condition_variable m_tasks_condvar;
+  std::condition_variable       m_cvTasks;
 };
 
 } // namespace utils

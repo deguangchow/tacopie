@@ -29,7 +29,6 @@
 
 int
 main(int argc, char** argv) {
-
 #ifdef _WIN32
     //! Windows netword DLL init
     WORD version = MAKEWORD(2, 2);
